@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -17,6 +18,16 @@ func main() {
 	content = content[:len(content)-2]
 
 	idRanges := strings.Split(string(content), ",")
+	start := time.Now()
+	sum := execute(idRanges, optimized)
+	fmt.Println("Optimized:", sum)
+	fmt.Println("Time passed:", time.Since(start))
+	start = time.Now()
+	sum = execute(idRanges, bruteForce)
+	fmt.Println("Brute Force:", sum)
+	fmt.Println("Time passed:", time.Since(start))
+}
+func execute(idRanges []string, impl func(string, string, int, int) int) int {
 	invalidIdSum := 0
 	for _, idRange := range idRanges {
 		lowerUpper := strings.Split(idRange, "-")
@@ -46,32 +57,52 @@ func main() {
 			upper = strconv.Itoa(upperNum)
 		}
 
-		firstHalfLower := lower[:len(lower)/2]
-		firstHalfUpper := upper[:len(upper)/2]
+		invalidIdSum += impl(lower, upper, lowerNum, upperNum)
+	}
 
-		firstHalfLowerNum, err := strconv.Atoi(firstHalfLower)
-		dieIfErr(err)
-		firstHalfUpperNum, err := strconv.Atoi(firstHalfUpper)
-		dieIfErr(err)
+	return invalidIdSum
+}
 
-		secondHalfUpper := upper[len(upper)/2:]
-		secondHalfUpperNum, err := strconv.Atoi(secondHalfUpper)
-		dieIfErr(err)
-		secondHalfLower := lower[len(lower)/2:]
-		secondHalfLowerNum, err := strconv.Atoi(secondHalfLower)
-		dieIfErr(err)
-		if firstHalfLowerNum != firstHalfUpperNum && firstHalfLowerNum >= secondHalfLowerNum {
-			invalidIdSum += getInvalidId(firstHalfLowerNum, lowerNum, upperNum, lower, upper)
-		}
-		for i := firstHalfLowerNum + 1; i < firstHalfUpperNum; i++ {
-			invalidIdSum += getInvalidId(i, lowerNum, upperNum, lower, upper)
-		}
-		if firstHalfUpperNum <= secondHalfUpperNum {
-			invalidIdSum += getInvalidId(firstHalfUpperNum, lowerNum, upperNum, lower, upper)
+func optimized(lower, upper string, lowerNum, upperNum int) int {
+
+	firstHalfLower := lower[:len(lower)/2]
+	firstHalfUpper := upper[:len(upper)/2]
+
+	firstHalfLowerNum, err := strconv.Atoi(firstHalfLower)
+	dieIfErr(err)
+	firstHalfUpperNum, err := strconv.Atoi(firstHalfUpper)
+	dieIfErr(err)
+
+	secondHalfUpper := upper[len(upper)/2:]
+	secondHalfUpperNum, err := strconv.Atoi(secondHalfUpper)
+	dieIfErr(err)
+	secondHalfLower := lower[len(lower)/2:]
+	secondHalfLowerNum, err := strconv.Atoi(secondHalfLower)
+	dieIfErr(err)
+	invalidIdSum := 0
+	if firstHalfLowerNum != firstHalfUpperNum && firstHalfLowerNum >= secondHalfLowerNum {
+		invalidIdSum += getInvalidId(firstHalfLowerNum, lowerNum, upperNum, lower, upper)
+	}
+	for i := firstHalfLowerNum + 1; i < firstHalfUpperNum; i++ {
+		invalidIdSum += getInvalidId(i, lowerNum, upperNum, lower, upper)
+	}
+	if firstHalfUpperNum <= secondHalfUpperNum {
+		invalidIdSum += getInvalidId(firstHalfUpperNum, lowerNum, upperNum, lower, upper)
+	}
+	return invalidIdSum
+}
+
+func bruteForce(lower, upper string, lowerNum, upperNum int) int {
+	invalidIdSum := 0
+
+	for i := lowerNum; i <= upperNum; i++ {
+		strNum := strconv.Itoa(i)
+		if strings.Compare(strNum[:len(strNum)/2], strNum[len(strNum)/2:]) == 0 {
+			invalidIdSum += i
 		}
 	}
 
-	fmt.Println(invalidIdSum)
+	return invalidIdSum
 }
 
 func getInvalidId(num, lowerNum, upperNum int, lower, upper string) int {
